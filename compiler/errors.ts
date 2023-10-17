@@ -15,9 +15,6 @@ export function error(type: "syntax" | "runtime", error: any): never {
     throw Error()
 }
 export function log(...data: any) {
-    console.log(
-        ...data
-    )
     setConsoleOutput([
         ...consoleOutput(),
         {
