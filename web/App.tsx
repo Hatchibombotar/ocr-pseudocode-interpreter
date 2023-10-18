@@ -88,7 +88,6 @@ const App: Component = () => {
 
     const program = parser.produceAST(input)
     const result = evaluate(program, environment)
-    console.log(result)
 
     setConsoleOutput([
       ...consoleOutput(),
@@ -103,7 +102,7 @@ const App: Component = () => {
     <div class="bg-neutral-900 font-sans text-white px-2">
       <header class="mx-2 my-2 flex items-center">
         <h1 class="font-semibold my-0">
-          OCR Exam Refrence Language Interpreter
+          OCR Exam Reference Language Interpreter
         </h1>
       </header>
       <div class="mx-2 flex gap-1">
