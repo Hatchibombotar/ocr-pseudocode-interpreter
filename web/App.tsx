@@ -134,12 +134,12 @@ const App: Component = () => {
         </div>
       </div>
       <div class=" rounded-md p-2">
-        <div class="flex h-[80vh] gap-2">
-          <div class="bg-[#1e1e1e] w-1/2 h-full border rounded-md border-neutral-400 p-1">
+        <div class="flex flex-col sm:flex-row h-[80vh] gap-2">
+          <div class="bg-[#1e1e1e] sm:w-1/2 h-full border rounded-md border-neutral-400 p-1">
             <div ref={editorRef} class="h-full w-full" />
           </div>
 
-          <div class="bg-[#1e1e1e] w-1/2 border rounded-md border-neutral-400 text-sm relative overflow-hidden">
+          <div class="bg-[#1e1e1e] sm:w-1/2 h-96 sm:h-auto border rounded-md border-neutral-400 text-sm relative overflow-hidden">
             {/* <p>This is the output console!</p> */}
             <div class=" font-mono p-1 overflow-y-auto h-[94%] special-scroll">
               <For each={consoleOutput()}>{({ text, type }) =>
@@ -184,7 +184,7 @@ function Examples() {
         <For each={examples}>{({ title, examples }) =>
           <div>
             <h1>{title}</h1>
-            <div class="grid gap-2 grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-2 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
               <For each={examples}>{({ title, code }) =>
                 <div class="border rounded-md border-neutral-400 pb-2 bg-[#1e1e1e] w-96">
                   <div class="flex items-center justify-center mx-2 my-1">
