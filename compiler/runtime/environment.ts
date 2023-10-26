@@ -11,6 +11,14 @@ import str from "./builtins/str"
 import { BooleanValue, IntegerValue, RuntimeValue, ArrayValue, NullValue, MAKE_ARRAY, NativeFunctionValue, ValueType, NativeMethodValue, StringValue } from "./values"
 import len from "./builtins/len"
 
+const TYPE_USE_VAL_ASSIGNMENT: ValueType[] = [
+    "null",
+    "integer",
+    "float",
+    "boolean",
+    "string"
+]
+
 function setupScope(environment: Environment) {
     // environment.declareVariable("x", { type: "number", value: 100 } as NumberValue)
     // environment.declareVariable("y", MAKE_ARRAY([5, 2]))
@@ -132,6 +140,9 @@ export default class Environment {
 
     public assignVariable(name: string, value: RuntimeValue): RuntimeValue {
         const environment = this.resolve(name)
+        if (TYPE_USE_VAL_ASSIGNMENT.includes(value.type)) {
+            value = {...value}
+        }
         if (environment == null) {
             this.variables.set(name, value)
         } else {

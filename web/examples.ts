@@ -193,6 +193,32 @@ names[3] = "Dana"
 names[4] = "Elijah"
 
 print(BinarySearch(names, "Ben"))`
+            },
+            {
+                title: "Bubble Sort",
+                code: `function BubbleSort(data)
+    swapped = true
+    while swapped == true
+        swapped = false
+        for innerCount = 0 to len(data) - 2
+            if data[innerCount] > data[innerCount + 1] then
+                temp = data[innerCount]
+                data[innerCount] = data[innerCount + 1]
+                data[innerCount + 1] = temp
+                swapped = true
+            endif
+        next innerCount
+    endwhile
+    return data
+endfunction
+
+array names[5]
+names[0] = "Catherine"
+names[1] = "Ben"
+names[2] = "Elijah"
+names[3] = "Dana"
+names[4] = "Ahmad"
+print(BubbleSort(names))`
             }
         ]
     }
