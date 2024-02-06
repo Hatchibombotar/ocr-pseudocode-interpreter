@@ -23,6 +23,7 @@ export type NodeType =
   | "UnaryExpression"
   | "MemberExpression"
   | "CallExpression"
+  | "RangeExpression"
 
 export interface Statement {
     kind: NodeType
@@ -121,6 +122,13 @@ export interface BinaryExpression extends Expression {
     right: Expression,
     operator: string
 }
+
+export interface RangeExpression extends Expression {
+    kind: "RangeExpression",
+    left: Expression,
+    right: Expression
+}
+
 export interface UnaryExpression extends Expression {
     kind: "UnaryExpression",
     right: Expression,

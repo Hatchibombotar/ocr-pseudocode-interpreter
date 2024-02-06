@@ -10,6 +10,8 @@ import printRaw from "./builtins/printRaw"
 import str from "./builtins/str"
 import { BooleanValue, IntegerValue, RuntimeValue, ArrayValue, NullValue, MAKE_ARRAY, NativeFunctionValue, ValueType, NativeMethodValue, StringValue } from "./values"
 import len from "./builtins/len"
+import upper from "./builtins/upper"
+import lower from "./builtins/lower"
 
 const TYPE_USE_VAL_ASSIGNMENT: ValueType[] = [
     "null",
@@ -61,6 +63,13 @@ function setupScope(environment: Environment) {
         } as NativeFunctionValue
 	);
     environment.declareVariable(
+        "float",
+        {
+            type: "native-function",
+            call: float
+        } as NativeFunctionValue
+	);
+    environment.declareVariable(
         "len",
         {
             type: "native-function",
@@ -68,10 +77,17 @@ function setupScope(environment: Environment) {
         } as NativeFunctionValue
 	);
     environment.declareVariable(
-        "float",
+        "upper",
         {
             type: "native-function",
-            call: float
+            call: upper
+        } as NativeFunctionValue
+	);
+    environment.declareVariable(
+        "lower",
+        {
+            type: "native-function",
+            call: lower
         } as NativeFunctionValue
 	);
     environment.declareVariable(

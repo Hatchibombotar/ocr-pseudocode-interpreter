@@ -2,7 +2,7 @@ import * as monaco from "monaco-editor"
 
 export default ({
 	defaultToken: 'invalid',
-	tokenPostfix: '.js',
+	tokenPostfix: '.pseudocode',
 
 	keywords: [
 		"array", "for", "to", "next", "while", "endwhile", "do",

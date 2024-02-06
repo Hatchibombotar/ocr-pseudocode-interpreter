@@ -1,5 +1,5 @@
 import { error } from "../errors";
-import { Statement, Program, Expression, BinaryExpression, NumericLiteral, Identifier, NullLiteral, VariableDeclaration, AssignmentExpression, ArrayDeclaration, CallExpression, MemberExpression, StringLiteral, FunctionDeclaration, IfStatement, ReturnStatement, ForLoop, WhileLoop, DoUntilLoop, UnaryExpression, CaseStatement, SwitchStatement, FloatLiteral } from "./ast";
+import { Statement, Program, Expression, BinaryExpression, NumericLiteral, Identifier, NullLiteral, VariableDeclaration, AssignmentExpression, ArrayDeclaration, CallExpression, MemberExpression, StringLiteral, FunctionDeclaration, IfStatement, ReturnStatement, ForLoop, WhileLoop, DoUntilLoop, UnaryExpression, CaseStatement, SwitchStatement, FloatLiteral, RangeExpression } from "./ast";
 import { tokenise, Token, TokenType } from "./lexer";
 
 export default class Parser {
@@ -72,7 +72,8 @@ export default class Parser {
         this.eat() // for
         const variable = this.expect(TokenType.Identifier, "Expected variable in for loop.").value
         this.eat() // =
-        const initial_value = this.parse_expression()
+        const initial_value = this.parse_multiplicative_expression() // skips assignment and range so the "to" does not make it get passes as a range
+        // TODO: use ranges instead of parsing items individially?
         this.eat() // to
         const end_value = this.parse_expression()
         const body: Statement[] = []
@@ -311,7 +312,7 @@ export default class Parser {
     }
 
     private parse_assignment_expression(): Expression {
-        let left = this.parse_additive_expression()
+        let left = this.parse_range_expression()
 
         while (this.at().type == TokenType.Equals) {
             this.eat()
@@ -326,13 +327,29 @@ export default class Parser {
         return left
     }
 
-
-    private parse_additive_expression(): Expression {
+    private parse_range_expression(): Expression {
         let left = this.parse_multiplicative_expression()
 
-        while (this.at().value == "+" || this.at().value == "-") {
-            const operator = this.eat().value
+        while (this.at().type == TokenType.To) {
+            this.eat()
+
             const right = this.parse_multiplicative_expression()
+            left = {
+                kind: "RangeExpression",
+                left,
+                right
+            } as RangeExpression
+        }
+
+        return left
+    }
+
+    private parse_multiplicative_expression(): Expression {
+        let left = this.parse_additive_expression()
+
+        while (this.at().value == "/" || this.at().value == "*" || this.at().value == "MOD" || this.at().value == "DIV") {
+            const operator = this.eat().value
+            const right = this.parse_additive_expression()
             left = {
                 kind: "BinaryExpression",
                 left,
@@ -344,10 +361,11 @@ export default class Parser {
         return left
     }
 
-    private parse_multiplicative_expression(): Expression {
+
+    private parse_additive_expression(): Expression {
         let left = this.parse_exponent_expression()
 
-        while (this.at().value == "/" || this.at().value == "*" || this.at().value == "MOD" || this.at().value == "DIV") {
+        while (this.at().value == "+" || this.at().value == "-") {
             const operator = this.eat().value
             const right = this.parse_exponent_expression()
             left = {
@@ -360,6 +378,8 @@ export default class Parser {
 
         return left
     }
+
+
 
     private parse_exponent_expression(): Expression {
         let left = this.parse_boolean_or_expression()
@@ -522,10 +542,10 @@ export default class Parser {
     }
 
     private parse_arguments_list(): Expression[] {
-        const argument_list = [this.parse_assignment_expression()]
+        const argument_list = [this.parse_expression()]
 
         while (this.at().type == TokenType.Comma && this.eat()) {
-            argument_list.push(this.parse_assignment_expression())
+            argument_list.push(this.parse_expression())
         }
 
         return argument_list

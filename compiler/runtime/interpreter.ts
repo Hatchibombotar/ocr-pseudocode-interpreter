@@ -1,5 +1,5 @@
-import { ValueType, RuntimeValue, IntegerValue, NullValue, MAKE_ARRAY, NativeFunctionValue, StringValue, BooleanValue, FunctionValue, ProcedureValue, prototype, NativeGetterValue, NativeMethodValue, ArrayValue, is_truthy, FloatValue } from "./values"
-import { ArrayDeclaration, AssignmentExpression, BinaryExpression, CallExpression, DoUntilLoop, Expression, ForLoop, FunctionDeclaration, Identifier, IfStatement, MemberExpression, NodeType, NullLiteral, NumericLiteral, ProcedureDeclaration, Program, ReturnStatement, Statement, StringLiteral, SwitchStatement, UnaryExpression, VariableDeclaration, WhileLoop } from "../reader/ast"
+import { ValueType, RuntimeValue, IntegerValue, NullValue, MAKE_ARRAY, NativeFunctionValue, StringValue, BooleanValue, FunctionValue, ProcedureValue, prototype, NativeGetterValue, NativeMethodValue, ArrayValue, is_truthy, FloatValue, RangeValue } from "./values"
+import { ArrayDeclaration, AssignmentExpression, BinaryExpression, CallExpression, DoUntilLoop, Expression, ForLoop, FunctionDeclaration, Identifier, IfStatement, MemberExpression, NodeType, NullLiteral, NumericLiteral, ProcedureDeclaration, Program, RangeExpression, ReturnStatement, Statement, StringLiteral, SwitchStatement, UnaryExpression, VariableDeclaration, WhileLoop } from "../reader/ast"
 import Environment from "./environment"
 import {error} from "../errors"
 import { updateObjKeepingRef } from "../utils"
@@ -278,6 +278,8 @@ export function evaluate(ast_node: Statement, environment: Environment): Runtime
             return evaluate_call_expression(ast_node as CallExpression, environment)
         case "MemberExpression": 
             return evaluate_member_expression(ast_node as MemberExpression, environment)
+        case "RangeExpression":
+            return evaluate_range_expression(ast_node as RangeExpression, environment)
         case "IfStatement":
             return evaluate_if_statement(ast_node as IfStatement, environment)
         case "SwitchStatement":
@@ -310,7 +312,7 @@ export function evaluate(ast_node: Statement, environment: Environment): Runtime
                 value: null
             } as NullValue
         default:
-            error("runtime", "(Internal) AST node not set up for interpretation " + ast_node)
+            error("runtime", "(Internal) AST node not set up for interpretation " + JSON.stringify(ast_node, null, 4))
     }
 }
 
@@ -493,19 +495,73 @@ function evaluate_member_expression(expression: MemberExpression, environment: E
     } else if (expression.computed && ["string", "array"].includes(type)) {
         const computed_property = evaluate(expression.property, environment)
 
-        if (computed_property.type != "integer") {
-            error("runtime", "Only integers are supported in computed property values.")
+        if (computed_property.type == "integer") {
+            if (object.type == "array") {
+                return (object as ArrayValue).value[computed_property.value]
+            } else if (object.type == "string") {
+                return {
+                    type: "string",
+                    value: object.value[computed_property.value]
+                } as StringValue
+            }
+        } else if (computed_property.type == "range") {
+            const range = computed_property as RangeValue
+            if (object.type == "array") {
+                const array = object as ArrayValue
+
+                if (range.start < 0) {
+                    error("runtime", `Index ${range.start} out of range`)
+                } else if (range.end > array.value.length) {
+                    error("runtime", `Index ${range.end} out of range`)
+                }
+
+                return {
+                    type: "array",
+                    dimensions: 1,
+                    value: array.value.slice(range.start, range.end)
+                } as ArrayValue
+
+            } else if (object.type == "string") {
+                const string = object as StringValue
+
+                if (range.start < 0) {
+                    error("runtime", `Index ${range.start} out of range`)
+                } else if (range.end > string.value.length) {
+                    error("runtime", `Index ${range.end} out of range`)
+                }
+
+                return {
+                    type: "string",
+                    value: string.value.slice(range.start, range.end)
+                } as StringValue
+            } else {
+            error("runtime", "Cannot index into type of")
+
+            }
+        } else {
+            error("runtime", "Only integers and ranges are supported in computed property values.")
+
         }
-        if (object.type == "array") {
-            return (object as ArrayValue).value[computed_property.value]
-        } else if (object.type == "string") {
-            return {
-                type: "string",
-                value: object.value[computed_property.value]
-            } as StringValue
-        }
+
     } else {
-        error("runtime", `Can not find property ${string_property} on variable ${"somevar name"}.`)
+        error("runtime", `Can not find property ${string_property} on variable.`)
+    }
+}
+
+function evaluate_range_expression(expression: RangeExpression, environment: Environment): RangeValue {
+    const left = evaluate(expression.left, environment)
+    const right = evaluate(expression.right, environment)
+
+    if (left.type != "integer") {
+        error("runtime", "Ranges can only be defined as being between integers. Found" + left.type)
+    } else if (right.type != "integer") {
+        error("runtime", "Ranges can only be defined as being between integers. Found" + right.type)
+    }
+
+    return {
+        type: "range",
+        start: (left as IntegerValue).value,
+        end: (right as IntegerValue).value
     }
 }
 

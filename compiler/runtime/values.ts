@@ -3,7 +3,7 @@ import { Statement } from "../reader/ast"
 import type Environment from "./environment"
 import { writeFile } from "../../web/files"
 
-export type ValueType = "null" | "integer" | "float" | "boolean" | "array" | "string" | "function" | "procedure" | "file-reader" | "file-writer" | "native-function" | "native-method" | "native-getter"
+export type ValueType = "null" | "integer" | "float" | "boolean" | "array" | "string" | "range" | "function" | "procedure" | "file-reader" | "file-writer" | "native-function" | "native-method" | "native-getter"
 
 export interface RuntimeValue {
     type: ValueType,
@@ -19,6 +19,7 @@ export interface IntegerValue extends RuntimeValue {
     type: "integer",
     value: number
 }
+
 export interface FloatValue extends RuntimeValue {
     type: "float",
     value: number
@@ -27,6 +28,12 @@ export interface FloatValue extends RuntimeValue {
 export interface StringValue extends RuntimeValue {
     type: "string",
     value: string
+}
+
+export interface RangeValue extends RuntimeValue {
+    type: "range",
+    start: number,
+    end: number
 }
 
 export const prototype: {
