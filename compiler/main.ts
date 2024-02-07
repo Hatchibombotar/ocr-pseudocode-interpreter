@@ -4,11 +4,10 @@ import Environment from "./runtime/environment";
 import { readFileSync, writeFileSync } from "fs";
 
 async function main() {
-    const parser = new Parser()
     const environment = new Environment()
 
     const input = String(readFileSync("./sample.txt"))
-    const program = parser.produceAST(input)
+    const program = Parser(input)
     writeFileSync("./data/ast.json", JSON.stringify(program, null, 4))
     
     console.log("== sample.txt ==")

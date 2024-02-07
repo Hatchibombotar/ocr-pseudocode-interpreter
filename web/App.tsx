@@ -11,7 +11,7 @@ import { consoleOutput, setConsoleOutput } from './console';
 import examples from './examples';
 import { valuesToStrings } from '../compiler/utils';
 import monarch_language from '../monarch_language';
-import { editor_theme, showExamples, setShowExamples, showFiles, setShowFiles } from './data';
+import { editor_theme, showExamples, setShowExamples, showFiles, setShowFiles, showExamQuestions, setShowExamQuestions } from './data';
 import { FileViewer } from './FileViewer';
 
 window.onbeforeunload = () => true
@@ -62,10 +62,9 @@ const App: Component = () => {
 
     const input = editor.getValue()
 
-    const parser = new Parser()
     environment = new Environment()
 
-    const program = parser.produceAST(input)
+    const program = Parser(input)
 
     // console.log(JSON.stringify(program))
 
@@ -84,9 +83,7 @@ const App: Component = () => {
       },
     ])
 
-    const parser = new Parser()
-
-    const program = parser.produceAST(input)
+    const program = Parser(input)
     const result = evaluate(program, environment)
 
     setConsoleOutput([
@@ -125,6 +122,7 @@ const App: Component = () => {
           file_input.click()
         }}>Load</button>
         <button class="border rounded-md border-neutral-400 text-white px-1 text-sm" onclick={() => setShowExamples(!showExamples())}>Examples</button>
+        <button class="border rounded-md border-neutral-400 text-white px-1 text-sm" onclick={() => setShowExamQuestions(!showExamQuestions())}>Exam Questions</button>
         <div class="ml-auto flex gap-1">
           <button class="border rounded-md border-neutral-400 text-white px-1 text-sm" onclick={() => setShowFiles(!showFiles())}>Files</button>
           <button class="bg-green-600 flex items-center justify-center rounded-md text-white text-sm py-1 px-2" onclick={run}>
@@ -163,6 +161,7 @@ const App: Component = () => {
         </div>
       </div>
       <Examples />
+      <ExamQuestions />
       <FileViewer />
 
 
@@ -206,6 +205,28 @@ function Examples() {
           </div>
 
         }</For>
+      </div>
+    </div>
+  </div>
+}
+
+
+function ExamQuestions() {
+  return <div classList={{
+    "hidden": !showExamQuestions()
+  }}>
+    <div class="absolute top-0 left-0 bg-neutral-950/80 w-full h-full" onclick={() => setShowExamQuestions(false)}></div>
+    <div class="absolute top-3 left-3 border rounded-md border-neutral-400 bg-neutral-900 w-auto px-2 max-h-[95vh] overflow-y-auto special-scroll pb-2">
+      <div class="my-1 flex items-center">
+        <h2 class="text-lg">Exam Questions</h2>
+        <FiXCircle class="ml-auto cursor-pointer" onclick={() => setShowExamQuestions(false)} />
+      </div>
+      <div class="">
+        <h3>GCSE</h3>
+        <h3>AS</h3>
+        <p class="underline">May 2019 - Question 4a</p>
+        <h3>A-Level</h3>
+
       </div>
     </div>
   </div>
