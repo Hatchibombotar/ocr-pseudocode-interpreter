@@ -657,10 +657,7 @@ function evaluate_member_expression(expression: MemberExpression, environment: E
                 if (is_private) {
                     error("runtime", "Attempted to access a method that is set to private")
                 }
-                if (value.type == "function") {
-                    error("runtime", "Functions not currently supported")
-                }
-                const procedure = {...value} as ProcedureValue // we don't want to override the class itself
+                const procedure = {...value} // we don't want to override the class itself
                 procedure.parent_scope = instance.internal_environment // change scope defined in to be within the class instance
 
                 return procedure
