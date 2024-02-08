@@ -8,7 +8,8 @@ export default ({
 		"array", "for", "to", "next", "while", "endwhile", "do",
 		"until", "if", "elseif", "else", "endif", "then",
 		"switch", "case", "default", "endswitch",
-		"function", "endfunction", "procedure", "endprocedure", "return"
+		"function", "endfunction", "procedure", "endprocedure", "return",
+		"class", "private", "public", "endclass", "new"
 	],
 
 	text_operations: [

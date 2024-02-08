@@ -146,6 +146,23 @@ myFile.close()`
                 title: "Comments",
                 code:
                     `print("Hello World") // This is a comment`
+            },
+            {
+                title: "Classes",
+                code:
+`class Pet
+    private name
+    public procedure new(givenName)
+        name=givenName
+    endprocedure
+    public procedure greet()
+        print("Hello! I am called", name)
+    endprocedure
+endclass
+
+myPet = new Pet("Silly")
+
+myPet.greet()`
             }
 
         ]

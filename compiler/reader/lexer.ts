@@ -34,6 +34,12 @@ export enum TokenType {
     Case,
     Default,
 
+    Class,
+    EndClass,
+    Private,
+    Public,
+    New,
+
     For,
     To,
     Next,
@@ -77,7 +83,12 @@ const KEYWORDS: Record<string, TokenType> = {
     "switch": TokenType.Switch,
     "endswitch": TokenType.EndSwitch,
     "case": TokenType.Case,
-    "default": TokenType.Default
+    "default": TokenType.Default,
+    "class": TokenType.Class,
+    "endclass": TokenType.EndClass,
+    "public": TokenType.Public,
+    "private": TokenType.Private,
+    "new": TokenType.New
 }
 
 export interface Token {

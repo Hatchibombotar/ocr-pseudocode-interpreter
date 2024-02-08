@@ -1,5 +1,5 @@
-import { ValueType, RuntimeValue, IntegerValue, NullValue, MAKE_ARRAY, NativeFunctionValue, StringValue, BooleanValue, FunctionValue, ProcedureValue, prototype, NativeGetterValue, NativeMethodValue, ArrayValue, is_truthy, FloatValue, RangeValue } from "./values"
-import { ArrayDeclaration, AssignmentExpression, BinaryExpression, CallExpression, DoUntilLoop, Expression, ForLoop, FunctionDeclaration, Identifier, IfStatement, MemberExpression, NodeType, NullLiteral, NumericLiteral, ProcedureDeclaration, Program, RangeExpression, ReturnStatement, Statement, StringLiteral, SwitchStatement, UnaryExpression, VariableDeclaration, WhileLoop } from "../reader/ast"
+import { ValueType, RuntimeValue, IntegerValue, NullValue, MAKE_ARRAY, NativeFunctionValue, StringValue, BooleanValue, FunctionValue, ProcedureValue, prototype, NativeGetterValue, NativeMethodValue, ArrayValue, is_truthy, FloatValue, RangeValue, ClassValue, ClassInstanceValue } from "./values"
+import { ArrayDeclaration, AssignmentExpression, BinaryExpression, CallExpression, ClassDeclaration, DoUntilLoop, Expression, ForLoop, FunctionDeclaration, Identifier, IfStatement, MemberExpression, NodeType, NullLiteral, NumericLiteral, ProcedureDeclaration, Program, RangeExpression, ReturnStatement, Statement, StringLiteral, SwitchStatement, UnaryExpression, VariableDeclaration, WhileLoop } from "../reader/ast"
 import Environment from "./environment"
 import {error} from "../errors"
 import { updateObjKeepingRef } from "../utils"
@@ -77,11 +77,59 @@ function evaluate_binary_expression(binary_operation: BinaryExpression, environm
     } else {
         error("runtime", `Operator "${binary_operation.operator}" is not supported between types of ${left.type} and ${right.type}`)
     }
+}
 
-    return { "type": "null", "value": null } as NullValue
+function evaluate_class_initialisation(class_call: Expression, environment: Environment): ClassInstanceValue {
+    if (class_call.kind != "CallExpression") {
+        error("runtime", "Expecting CallExpression in class initialisation e.g. new Pet(), found something else.")
+    }
+
+    const inherits_from_class = evaluate((class_call as CallExpression).caller, environment)
+    if (inherits_from_class.type != "class") {
+        error("runtime", "Can only create instances from classes, found something else.")
+    }
+
+    const internal_environment = new Environment((inherits_from_class as ClassValue).declatation_enviroment)
+
+    const instance = {
+        type: "instance",
+        inherits_from: inherits_from_class,
+        internal_environment,
+    } as ClassInstanceValue
+
+    
+    for (const attribute of (inherits_from_class as ClassValue).attributes) {
+        internal_environment.declareVariable(
+            attribute.identifier,
+            {
+                type: "null",
+            }
+        )
+    }
+
+    const argument_list = (class_call as CallExpression).arguments.map((arg) => evaluate(arg, environment));
+
+    let constructor_exists = false
+    for (const method of (inherits_from_class as ClassValue).methods) {
+        if (method.identifier == "new") {
+            constructor_exists = true
+            const procedure = {...method.value} as ProcedureValue // we don't want to override the class itself
+            procedure.parent_scope = internal_environment // change scope defined in to be within the class instance
+
+            call_procedure(
+                procedure as ProcedureValue,
+                argument_list
+            )
+        }
+    }
+
+    return instance
 }
 
 function evaluate_unary_expression(unary_operation: UnaryExpression, environment: Environment): RuntimeValue {
+    if (unary_operation.operator == "new") {
+        return evaluate_class_initialisation(unary_operation.right, environment)
+    }
     const right = evaluate(unary_operation.right, environment)
 
     if (unary_operation.operator == "NOT") {
@@ -167,6 +215,27 @@ function evaluate_identifier(identifier: Identifier, environment: Environment): 
     return value
 }
 
+function call_procedure(procedure: ProcedureValue, args: RuntimeValue[]) {
+    const function_scope = new Environment(procedure.parent_scope)
+
+    for (const index in procedure.parameters) {
+        const parameter = procedure.parameters[index]
+        const argument = args[index]
+
+        if (argument == undefined) {
+            error("runtime", `Parameter ${parameter} has not been provided to function.`)
+        }
+
+        function_scope.assignVariable(
+            parameter, argument
+        )
+    }
+
+    for (const statement of procedure.body) {
+        evaluate(statement, function_scope)
+    }
+}
+
 function evaluate_call_expression(call_expression: CallExpression, environment: Environment): RuntimeValue {
     if (call_expression.caller.kind != "Identifier" && call_expression.caller.kind != "MemberExpression") {
         error("runtime", `Only identifiers are supported in call expressions, ${call_expression.caller.kind} is not supported.`)
@@ -176,11 +245,11 @@ function evaluate_call_expression(call_expression: CallExpression, environment: 
     const caller = evaluate(call_expression.caller, environment);
 
     if (caller.type === "native-function") {
-        const func = evaluate(call_expression.caller, environment) as NativeFunctionValue
+        const func = caller as NativeFunctionValue
         const result = func.call(argument_list, environment);
         return result;
     } else if (caller.type === "function") {
-        const func = evaluate(call_expression.caller, environment) as FunctionValue
+        const func = caller as FunctionValue
         const function_scope = new Environment(func.parent_scope, {is_function: true})
 
         for (const index in func.parameters) {
@@ -213,25 +282,7 @@ function evaluate_call_expression(call_expression: CallExpression, environment: 
         return return_value
 
     } else if (caller.type == "procedure") {
-        const procedure = evaluate(call_expression.caller, environment) as ProcedureValue
-        const function_scope = new Environment(procedure.parent_scope)
-
-        for (const index in procedure.parameters) {
-            const parameter = procedure.parameters[index]
-            const argument = argument_list[index]
-
-            if (argument == undefined) {
-                error("runtime", `Parameter ${parameter} has not been provided to function.`)
-            }
-
-            function_scope.assignVariable(
-                parameter, argument
-            )
-        }
-
-        for (const statement of procedure.body) {
-            evaluate(statement, function_scope)
-        }
+        call_procedure(caller as ProcedureValue, argument_list)
 
         return {
             type: "null",
@@ -244,8 +295,14 @@ function evaluate_call_expression(call_expression: CallExpression, environment: 
 
         const result = func.call(object, argument_list, environment);
         return result;
+    } else if (caller.type === "instance") {
+
+        const instance = caller as ClassInstanceValue
+        console.log("Instance!", instance)
+        // instance.inherits_from.attributes
+
     } else {
-        error("runtime", `Can only call functions or procedures, not values of type ${caller.type}`)
+        error("runtime", `Can only call functions, procedures, or class instances, not values of type ${caller.type}`)
     }
 }
 
@@ -299,6 +356,8 @@ export function evaluate(ast_node: Statement, environment: Environment): Runtime
             return evaluate_function_declaration(ast_node as FunctionDeclaration, environment)
         case "ProcedureDeclaration":
             return evaluate_procedure_declaration(ast_node as ProcedureDeclaration, environment)
+        case "ClassDeclaration":
+            return evaluate_class_declaration(ast_node as ClassDeclaration, environment)
         case "ForLoop":
             return evaluate_for_statement(ast_node as ForLoop, environment)
         case "WhileLoop":
@@ -433,7 +492,7 @@ function evaluate_array_declaration(declaration: ArrayDeclaration, environment: 
     )
 }
 
-function evaluate_function_declaration(declaration: FunctionDeclaration, environment: Environment) {
+function evaluate_function_declaration(declaration: FunctionDeclaration, environment: Environment): FunctionValue {
     const { identifier, parameters, body } = declaration
     return environment.declareVariable(
         identifier, {
@@ -442,9 +501,9 @@ function evaluate_function_declaration(declaration: FunctionDeclaration, environ
             body,
             parent_scope: environment
         } as FunctionValue
-    )
+    ) as FunctionValue
 }
-function evaluate_procedure_declaration(declaration: ProcedureDeclaration, environment: Environment) {
+function evaluate_procedure_declaration(declaration: ProcedureDeclaration, environment: Environment): ProcedureValue {
     const { identifier, parameters, body } = declaration
     return environment.declareVariable(
         identifier, {
@@ -453,7 +512,47 @@ function evaluate_procedure_declaration(declaration: ProcedureDeclaration, envir
             body,
             parent_scope: environment
         } as ProcedureValue
-    )
+    ) as ProcedureValue
+}
+function evaluate_class_declaration(declaration: ClassDeclaration, environment: Environment): ClassValue {
+    const { identifier, body } = declaration
+    const attributes: ClassValue["attributes"] = []
+    const methods: ClassValue["methods"] = []
+    const class_environment = new Environment(environment)
+    for (const {data, visibility} of body) {
+        switch (data.kind) {
+            case "FunctionDeclaration":
+                methods.push({
+                    is_private: visibility == "private",
+                    identifier: data.identifier,
+                    value: evaluate_function_declaration(data, class_environment)
+                })
+                continue
+            case "ProcedureDeclaration":
+                methods.push({
+                    is_private: visibility == "private",
+                    identifier: data.identifier,
+                    value: evaluate_procedure_declaration(data, class_environment)
+                })
+                continue
+            case "Identifier":
+                attributes.push({
+                    is_private: visibility == "private",
+                    identifier: data.symbol,
+                    initial_value: { type: "null", value: null } as NullValue
+                })
+                continue
+            default:
+                error("runtime", "(Internal) Unexpected class body item")
+        }
+    }
+    return environment.declareVariable(
+        identifier, {
+            type: "class",
+            methods,
+            attributes,
+        } as ClassValue
+    ) as ClassValue
 }
 
 function evaluate_variable_assignment(assignment: AssignmentExpression, environment: Environment): RuntimeValue {
@@ -535,14 +634,39 @@ function evaluate_member_expression(expression: MemberExpression, environment: E
                     value: string.value.slice(range.start, range.end)
                 } as StringValue
             } else {
-            error("runtime", "Cannot index into type of")
-
+                error("runtime", "Cannot index into type of")
             }
         } else {
             error("runtime", "Only integers and ranges are supported in computed property values.")
 
         }
+    } else if (type == "instance") {
+        const instance = object as ClassInstanceValue
+        const instance_of = instance.inherits_from
+        for (const {identifier, is_private} of instance_of.attributes) {
+            if (identifier == string_property) {
+                if (is_private) {
+                    error("runtime", "Attempted to access a attribute that is set to private")
+                }
+                const value = instance.internal_environment.lookupVariable(identifier)
+                return value
+            }
+        }
+        for (const {identifier, is_private, value} of instance_of.methods) {
+            if (identifier == string_property) {
+                if (is_private) {
+                    error("runtime", "Attempted to access a method that is set to private")
+                }
+                if (value.type == "function") {
+                    error("runtime", "Functions not currently supported")
+                }
+                const procedure = {...value} as ProcedureValue // we don't want to override the class itself
+                procedure.parent_scope = instance.internal_environment // change scope defined in to be within the class instance
 
+                return procedure
+            }
+        }
+        error("runtime", `Cannot find attribute/method ${string_property} on class instance`)
     } else {
         error("runtime", `Can not find property ${string_property} on variable.`)
     }

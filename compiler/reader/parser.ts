@@ -1,5 +1,5 @@
 import { error } from "../errors";
-import { Statement, Program, Expression, BinaryExpression, NumericLiteral, Identifier, NullLiteral, VariableDeclaration, AssignmentExpression, ArrayDeclaration, CallExpression, MemberExpression, StringLiteral, FunctionDeclaration, IfStatement, ReturnStatement, ForLoop, WhileLoop, DoUntilLoop, UnaryExpression, CaseStatement, SwitchStatement, FloatLiteral, RangeExpression } from "./ast";
+import { Statement, Program, Expression, BinaryExpression, NumericLiteral, Identifier, NullLiteral, VariableDeclaration, AssignmentExpression, ArrayDeclaration, CallExpression, MemberExpression, StringLiteral, FunctionDeclaration, IfStatement, ReturnStatement, ForLoop, WhileLoop, DoUntilLoop, UnaryExpression, CaseStatement, SwitchStatement, FloatLiteral, RangeExpression, ClassDeclaration, ClassItem, ProcedureDeclaration } from "./ast";
 import { tokenise, Token, TokenType } from "./lexer";
 
 export default function Parser(source_code: string): Program {
@@ -17,7 +17,7 @@ export default function Parser(source_code: string): Program {
     function expect(type: TokenType, provided_error: any) {
         const previous = tokens.shift() as Token;
         if (!previous || previous.type != type) {
-            error("syntax", provided_error + previous + " - Expecting: " + type);
+            error("syntax", provided_error + JSON.stringify(previous) + " - Expecting: " + type);
         }
 
         return previous;
@@ -36,6 +36,8 @@ export default function Parser(source_code: string): Program {
             case TokenType.Procedure:
             case TokenType.Function:
                 return parse_function_declaration()
+            case TokenType.Class:
+                return parse_class_declaration()
             case TokenType.Return:
                 return parse_return_statement()
             case TokenType.If:
@@ -204,9 +206,22 @@ export default function Parser(source_code: string): Program {
     }
 
 
-    function parse_function_declaration(): Statement {
+    function parse_function_declaration(is_class?: boolean): Statement {
         const keyword = eat() // function | procedure
-        const name = expect(TokenType.Identifier, `Expected identifier name following ${keyword.value} keyword.`).value
+        const name = eat()
+        // const name = expect(TokenType.Identifier, `Expected identifier name following ${keyword.value} keyword.`).value
+
+        let identifier;
+        if (name.type == TokenType.Identifier) {
+            identifier = name.value
+        } else if (name.type == TokenType.New) {
+            if (!is_class) {
+                error("syntax", "Cannot use new keyword as procedure name outside of a class definition.")
+            }
+            identifier = "new"
+        } else {
+            error("runtime", `Expected identifier name following ${keyword.value} keyword.`)
+        }
 
         const args = parse_arguments()
         const parameters: string[] = []
@@ -232,10 +247,62 @@ export default function Parser(source_code: string): Program {
 
         const function_declaration = {
             kind: keyword.type == TokenType.Function ? "FunctionDeclaration" : "ProcedureDeclaration",
-            identifier: name,
+            identifier: identifier,
             parameters,
             body
         } as Statement
+
+        return function_declaration
+    }
+
+    function parse_class_declaration(): Statement {
+        eat() // eat class keyword
+        const name = expect(TokenType.Identifier, `Expected identifier name following class keyword.`).value
+        
+        const body: ClassItem[] = []
+
+        while (at().type != TokenType.EOF && at().type != TokenType.EndClass) {
+            let visibility: "public" | "private" = "public"
+
+            const visibility_token = eat()
+            if (visibility_token.type == TokenType.Private) {
+                visibility = "private"
+            } else if (visibility_token.type == TokenType.Public) {
+                visibility = "public"
+            } else {
+                error("syntax", "Expecting public or private keyword inside of class body")
+            }
+
+            if (at().type == TokenType.Identifier) {
+                body.push({
+                    data: parse_primary_expression() as Identifier,
+                    visibility
+                })
+            } else if (at().type == TokenType.Procedure) {
+                body.push({
+                    data: parse_function_declaration(true) as ProcedureDeclaration,
+                    visibility
+                })
+            } else if (at().type == TokenType.Function) {
+                body.push({
+                    data: parse_function_declaration() as FunctionDeclaration,
+                    visibility
+                })
+            } else {
+                error("syntax", "Unexpected token found after public/private keyword")
+            }
+
+
+        }
+
+        expect(TokenType.EndClass, "Class declarations must end with endclass keyword.")
+
+
+        const function_declaration = {
+            kind: "ClassDeclaration",
+            identifier: name,
+            body
+        } as ClassDeclaration
 
         return function_declaration
     }
@@ -471,27 +538,22 @@ export default function Parser(source_code: string): Program {
                 operator
             } as UnaryExpression
         }
-        return parse_member_call_expression()
+        return parse_new_expression()
     }
 
-    // NOT is NOT a binary operator.
-
-    // function parse_boolean_not_expression(): Expression {
-    //     let left = parse_member_call_expression()
-
-    //     while (at().value == "NOT") {
-    //         const operator = eat().value
-    //         const right = parse_member_call_expression()
-    //         left = {
-    //             kind: "BinaryExpression",
-    //             left,
-    //             right,
-    //             operator
-    //         } as BinaryExpression
-    //     }
-
-    //     return left
-    // }
+    
+    function parse_new_expression(): Expression {
+        if (at().type == TokenType.New) {
+            const operator = eat().value
+            const right = parse_member_call_expression()
+            return {
+                kind: "UnaryExpression",
+                right,
+                operator
+            } as UnaryExpression
+        }
+        return parse_member_call_expression()
+    }
 
 
     function parse_member_call_expression(): Expression {

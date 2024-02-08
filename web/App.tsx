@@ -122,7 +122,7 @@ const App: Component = () => {
           file_input.click()
         }}>Load</button>
         <button class="border rounded-md border-neutral-400 text-white px-1 text-sm" onclick={() => setShowExamples(!showExamples())}>Examples</button>
-        <button class="border rounded-md border-neutral-400 text-white px-1 text-sm" onclick={() => setShowExamQuestions(!showExamQuestions())}>Exam Questions</button>
+        {/* <button class="border rounded-md border-neutral-400 text-white px-1 text-sm" onclick={() => setShowExamQuestions(!showExamQuestions())}>Exam Questions</button> */}
         <div class="ml-auto flex gap-1">
           <button class="border rounded-md border-neutral-400 text-white px-1 text-sm" onclick={() => setShowFiles(!showFiles())}>Files</button>
           <button class="bg-green-600 flex items-center justify-center rounded-md text-white text-sm py-1 px-2" onclick={run}>

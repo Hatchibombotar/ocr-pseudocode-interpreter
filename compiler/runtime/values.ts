@@ -3,11 +3,11 @@ import { Statement } from "../reader/ast"
 import type Environment from "./environment"
 import { writeFile } from "../../web/files"
 
-export type ValueType = "null" | "integer" | "float" | "boolean" | "array" | "string" | "range" | "function" | "procedure" | "file-reader" | "file-writer" | "native-function" | "native-method" | "native-getter"
+export type ValueType = "null" | "integer" | "float" | "boolean" | "array" | "string" | "range" | "function" | "procedure" | "class" | "instance" | "file-reader" | "file-writer" | "native-function" | "native-method" | "native-getter"
 
 export interface RuntimeValue {
     type: ValueType,
-    value?: any
+    value?: any // TODO: REMOVE!
 }
 
 export interface NullValue extends RuntimeValue {
@@ -196,6 +196,27 @@ export interface FunctionValue extends RuntimeValue {
     parameters: string[], // TODO: change to array of objects so params can be passed as value/reference
     body: Statement[],
     parent_scope: Environment
+}
+
+export interface ClassValue extends RuntimeValue {
+    type: "class",
+    attributes: {
+        is_private: boolean,
+        identifier: string,
+        initial_value: NullValue
+    }[],
+    methods: {
+        is_private: boolean,
+        identifier: string,
+        value: FunctionValue | ProcedureValue
+    }[],
+    declatation_enviroment: Environment
+}
+
+export interface ClassInstanceValue extends RuntimeValue {
+    type: "instance",
+    internal_environment: Environment,
+    inherits_from: ClassValue
 }
 
 export type MethodCall = (source: RuntimeValue, args: RuntimeValue[], env: Environment) => RuntimeValue;

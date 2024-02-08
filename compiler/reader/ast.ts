@@ -25,6 +25,8 @@ export type NodeType =
   | "CallExpression"
   | "RangeExpression"
 
+  | "ClassDeclaration"
+
 export interface Statement {
     kind: NodeType
 }
@@ -46,6 +48,19 @@ export interface FunctionDeclaration extends Statement {
     parameters: string[], // TODO: change to array of objects so params can be passed as value/refrence
     body: Statement[]
 }
+
+export interface ClassDeclaration extends Statement {
+    kind: "ClassDeclaration",
+    identifier: string,
+    
+    body: ClassItem[]
+}
+
+export type ClassItem = {
+    data: Identifier | ProcedureDeclaration | FunctionDeclaration
+    visibility: "public" | "private"
+}
+
 export interface ProcedureDeclaration extends Statement {
     kind: "ProcedureDeclaration",
     identifier: string,
