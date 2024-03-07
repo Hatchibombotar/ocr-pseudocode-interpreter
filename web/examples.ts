@@ -163,6 +163,26 @@ endclass
 myPet = new Pet("Silly")
 
 myPet.greet()`
+            },
+            {
+                title: "Classes (Inheritance)",
+                code:
+`class Pet
+    private name
+    public procedure new(givenName)
+        name=givenName
+    endprocedure
+endclass
+
+class Dog inherits Pet
+    private breed
+    public procedure new(givenName, givenBreed)
+        super.new(givenName)
+        breed=givenBreed
+    endprocedure
+endclass
+
+myDog = new Dog("Fido", "Scottish Terrier")`
             }
 
         ]

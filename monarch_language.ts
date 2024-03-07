@@ -9,7 +9,7 @@ export default ({
 		"until", "if", "elseif", "else", "endif", "then",
 		"switch", "case", "default", "endswitch",
 		"function", "endfunction", "procedure", "endprocedure", "return",
-		"class", "private", "public", "endclass", "new"
+		"class", "private", "public", "endclass", "new", "inherits"
 	],
 
 	text_operations: [

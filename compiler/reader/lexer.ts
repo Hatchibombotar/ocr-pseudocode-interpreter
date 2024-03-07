@@ -39,6 +39,7 @@ export enum TokenType {
     Private,
     Public,
     New,
+    Inherits,
 
     For,
     To,
@@ -88,7 +89,8 @@ const KEYWORDS: Record<string, TokenType> = {
     "endclass": TokenType.EndClass,
     "public": TokenType.Public,
     "private": TokenType.Private,
-    "new": TokenType.New
+    "new": TokenType.New,
+    "inherits": TokenType.Inherits
 }
 
 export interface Token {
@@ -200,10 +202,10 @@ export function tokenise(source: string): Token[] {
                 }
 
                 const reserved: TokenType = KEYWORDS[identifier]
-                if (reserved === undefined) {
-                    tokens.push(token(identifier, TokenType.Identifier, meta))
-                } else {
+                if (reserved !== undefined && tokens.at(-1)?.type != TokenType.Dot) {
                     tokens.push(token(identifier, reserved, meta))
+                } else {
+                    tokens.push(token(identifier, TokenType.Identifier, meta))
                 }
             } else if (src[0] == "\n") {
                 line += 1

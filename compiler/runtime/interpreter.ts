@@ -1,7 +1,7 @@
 import { ValueType, RuntimeValue, IntegerValue, NullValue, MAKE_ARRAY, NativeFunctionValue, StringValue, BooleanValue, FunctionValue, ProcedureValue, prototype, NativeGetterValue, NativeMethodValue, ArrayValue, is_truthy, FloatValue, RangeValue, ClassValue, ClassInstanceValue } from "./values"
 import { ArrayDeclaration, AssignmentExpression, BinaryExpression, CallExpression, ClassDeclaration, DoUntilLoop, Expression, ForLoop, FunctionDeclaration, Identifier, IfStatement, MemberExpression, NodeType, NullLiteral, NumericLiteral, ProcedureDeclaration, Program, RangeExpression, ReturnStatement, Statement, StringLiteral, SwitchStatement, UnaryExpression, VariableDeclaration, WhileLoop } from "../reader/ast"
 import Environment from "./environment"
-import {error} from "../errors"
+import { error } from "../errors"
 import { updateObjKeepingRef } from "../utils"
 
 function evaluate_program(program: Program, environment: Environment): RuntimeValue {
@@ -84,21 +84,22 @@ function evaluate_class_initialisation(class_call: Expression, environment: Envi
         error("runtime", "Expecting CallExpression in class initialisation e.g. new Pet(), found something else.")
     }
 
-    const inherits_from_class = evaluate((class_call as CallExpression).caller, environment)
-    if (inherits_from_class.type != "class") {
+    const created_from_class = evaluate((class_call as CallExpression).caller, environment)
+    if (created_from_class.type != "class") {
         error("runtime", "Can only create instances from classes, found something else.")
     }
 
-    const internal_environment = new Environment((inherits_from_class as ClassValue).declatation_enviroment)
+    // TODO: consider changing declatation_enviroment to use environment.resolve
+    const internal_environment = new Environment((created_from_class as ClassValue).declatation_enviroment)
 
     const instance = {
         type: "instance",
-        inherits_from: inherits_from_class,
+        instance_of: created_from_class,
         internal_environment,
     } as ClassInstanceValue
 
-    
-    for (const attribute of (inherits_from_class as ClassValue).attributes) {
+
+    for (const attribute of (created_from_class as ClassValue).attributes) {
         internal_environment.declareVariable(
             attribute.identifier,
             {
@@ -110,11 +111,26 @@ function evaluate_class_initialisation(class_call: Expression, environment: Envi
     const argument_list = (class_call as CallExpression).arguments.map((arg) => evaluate(arg, environment));
 
     let constructor_exists = false
-    for (const method of (inherits_from_class as ClassValue).methods) {
+    for (const method of (created_from_class as ClassValue).methods) {
         if (method.identifier == "new") {
             constructor_exists = true
-            const procedure = {...method.value} as ProcedureValue // we don't want to override the class itself
-            procedure.parent_scope = internal_environment // change scope defined in to be within the class instance
+            const procedure = { ...method.value } as ProcedureValue // we don't want to override the class itself
+            procedure.parent_scope = internal_environment // change scope constructor is defined in to be within the class instance
+
+            // create super instance
+            const super_class = (created_from_class as ClassValue).inherits_from
+            if (super_class) {
+                const super_internal_environment = new Environment((super_class as ClassValue).declatation_enviroment)
+
+                const super_instance = {
+                    type: "instance",
+                    instance_of: super_class,
+                    internal_environment: super_internal_environment,
+                } as ClassInstanceValue
+
+                internal_environment.declareVariable("super", super_instance)
+            }
+
 
             call_procedure(
                 procedure as ProcedureValue,
@@ -124,6 +140,17 @@ function evaluate_class_initialisation(class_call: Expression, environment: Envi
     }
 
     return instance
+}
+
+function class_constructor(created_from_class: ClassValue, internal_environment: Environment) {
+    for (const attribute of (created_from_class as ClassValue).attributes) {
+        internal_environment.declareVariable(
+            attribute.identifier,
+            {
+                type: "null",
+            }
+        )
+    }
 }
 
 function evaluate_unary_expression(unary_operation: UnaryExpression, environment: Environment): RuntimeValue {
@@ -250,7 +277,7 @@ function evaluate_call_expression(call_expression: CallExpression, environment: 
         return result;
     } else if (caller.type === "function") {
         const func = caller as FunctionValue
-        const function_scope = new Environment(func.parent_scope, {is_function: true})
+        const function_scope = new Environment(func.parent_scope, { is_function: true })
 
         for (const index in func.parameters) {
             const parameter = func.parameters[index]
@@ -272,7 +299,7 @@ function evaluate_call_expression(call_expression: CallExpression, environment: 
 
         for (const statement of (func as FunctionValue).body) {
             evaluate(statement, function_scope)
-            
+
             if (function_scope.terminated) {
                 return_value = function_scope.return_value ?? return_value
                 break
@@ -289,7 +316,6 @@ function evaluate_call_expression(call_expression: CallExpression, environment: 
             value: null
         } as NullValue
     } else if (caller.type === "native-method") {
-
         const func = evaluate(call_expression.caller, environment) as NativeMethodValue
         const object = evaluate(call_expression.caller.object, environment) as RuntimeValue
 
@@ -333,7 +359,7 @@ export function evaluate(ast_node: Statement, environment: Environment): Runtime
             return evaluate_variable_assignment(ast_node as AssignmentExpression, environment)
         case "CallExpression":
             return evaluate_call_expression(ast_node as CallExpression, environment)
-        case "MemberExpression": 
+        case "MemberExpression":
             return evaluate_member_expression(ast_node as MemberExpression, environment)
         case "RangeExpression":
             return evaluate_range_expression(ast_node as RangeExpression, environment)
@@ -405,7 +431,7 @@ function evaluate_for_statement(loop: ForLoop, environment: Environment): NullVa
             }
         )
     }
-    
+
     return {
         type: "null",
         value: null
@@ -430,7 +456,7 @@ function evaluate_do_until_statement(loop: DoUntilLoop, environment: Environment
             evaluate(statement, loop_scope)
         }
     }
-    
+
     return {
         type: "null",
         value: null
@@ -442,7 +468,7 @@ function evaluate_while_statement(loop: WhileLoop, environment: Environment): Nu
 
     let i = 0
     while (true) {
-        i ++
+        i++
         if (loop_scope.terminated) {
             break
         }
@@ -463,7 +489,7 @@ function evaluate_while_statement(loop: WhileLoop, environment: Environment): Nu
             }
         }
     }
-    
+
     return {
         type: "null",
         value: null
@@ -515,11 +541,19 @@ function evaluate_procedure_declaration(declaration: ProcedureDeclaration, envir
     ) as ProcedureValue
 }
 function evaluate_class_declaration(declaration: ClassDeclaration, environment: Environment): ClassValue {
-    const { identifier, body } = declaration
+    const { identifier, inherits_from, body } = declaration
     const attributes: ClassValue["attributes"] = []
     const methods: ClassValue["methods"] = []
     const class_environment = new Environment(environment)
-    for (const {data, visibility} of body) {
+
+    let parent_class = null;
+    if (inherits_from) {
+        parent_class = environment.lookupVariable(inherits_from)
+        if (parent_class.type != "class") {
+            error("runtime", "Cannot inherit from non-classes")
+        }
+    }
+    for (const { data, visibility } of body) {
         switch (data.kind) {
             case "FunctionDeclaration":
                 methods.push({
@@ -551,6 +585,7 @@ function evaluate_class_declaration(declaration: ClassDeclaration, environment: 
             type: "class",
             methods,
             attributes,
+            inherits_from: parent_class
         } as ClassValue
     ) as ClassValue
 }
@@ -642,24 +677,29 @@ function evaluate_member_expression(expression: MemberExpression, environment: E
         }
     } else if (type == "instance") {
         const instance = object as ClassInstanceValue
-        const instance_of = instance.inherits_from
-        for (const {identifier, is_private} of instance_of.attributes) {
+        const instance_of = instance.instance_of
+        for (const { identifier, is_private } of instance_of.attributes) {
             if (identifier == string_property) {
                 if (is_private) {
-                    error("runtime", "Attempted to access a attribute that is set to private")
+                    error("runtime", "Attempted to access an attribute that is set to private")
                 }
                 const value = instance.internal_environment.lookupVariable(identifier)
                 return value
             }
         }
-        for (const {identifier, is_private, value} of instance_of.methods) {
+        for (const { identifier, is_private, value } of instance_of.methods) {
             if (identifier == string_property) {
                 if (is_private) {
                     error("runtime", "Attempted to access a method that is set to private")
                 }
-                const procedure = {...value} // we don't want to override the class itself
+                const procedure = { ...value } // we don't want to override the class itself
                 procedure.parent_scope = instance.internal_environment // change scope defined in to be within the class instance
 
+                // NOTE: kinda hacky, shouldn't run when a member is accessed, only when the constructor is called
+                // TODO: Fix this!
+                if (identifier == "new") {
+                    class_constructor(instance.instance_of, instance.internal_environment)
+                }
                 return procedure
             }
         }

@@ -52,6 +52,7 @@ export interface FunctionDeclaration extends Statement {
 export interface ClassDeclaration extends Statement {
     kind: "ClassDeclaration",
     identifier: string,
+    inherits_from: string | null
     
     body: ClassItem[]
 }

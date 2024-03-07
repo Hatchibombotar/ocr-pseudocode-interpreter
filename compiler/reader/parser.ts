@@ -258,6 +258,12 @@ export default function Parser(source_code: string): Program {
     function parse_class_declaration(): Statement {
         eat() // eat class keyword
         const name = expect(TokenType.Identifier, `Expected identifier name following class keyword.`).value
+
+        let inherits_from = null
+        if (at().type == TokenType.Inherits) {
+            eat() // eat inherits keyword
+            inherits_from = expect(TokenType.Identifier, `Expected identifier name following inherits keyword.`).value
+        }
         
         const body: ClassItem[] = []
 
@@ -301,6 +307,7 @@ export default function Parser(source_code: string): Program {
         const function_declaration = {
             kind: "ClassDeclaration",
             identifier: name,
+            inherits_from,
             body
         } as ClassDeclaration
 
@@ -684,6 +691,8 @@ export default function Parser(source_code: string): Program {
     while (not_eof()) {
         program.body.push(parse_statement())
     }
+
+    console.log(program)
 
     return program
 }

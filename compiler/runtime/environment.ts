@@ -186,10 +186,15 @@ export default class Environment {
         return value
     }
 
+    /**
+     * Recursively searches for variable and returns the value associated with it.
+     * @param name identifier of variable to lookup
+     * @returns runtime value that is stored for the given identifer
+     */
     public lookupVariable(name: string): RuntimeValue {
         const environment = this.resolve(name)
         if (environment == null) {
-            error("runtime", `Cannot find variable ${name} in the current scope.`)
+            error("runtime", `Cannot find variable/attribute ${name} in the current scope.`)
         }
         return environment.variables.get(name) as RuntimeValue
     }

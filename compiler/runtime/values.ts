@@ -210,13 +210,15 @@ export interface ClassValue extends RuntimeValue {
         identifier: string,
         value: FunctionValue | ProcedureValue
     }[],
+    inherits_from: ClassValue | null
     declatation_enviroment: Environment
 }
 
 export interface ClassInstanceValue extends RuntimeValue {
     type: "instance",
     internal_environment: Environment,
-    inherits_from: ClassValue
+    instance_of: ClassValue,
+    super_instance: ClassInstanceValue
 }
 
 export type MethodCall = (source: RuntimeValue, args: RuntimeValue[], env: Environment) => RuntimeValue;
