@@ -164,7 +164,9 @@ const App: Component = () => {
       <ExamQuestions />
       <FileViewer />
 
-
+      <footer class="mx-2">
+        <a class="underline text-sm text-neutral-300" target='_blank' href="https://hatchibombotar.com#contact">Contact</a>
+      </footer>
     </div>
   );
 };

@@ -171,6 +171,13 @@ function evaluate_unary_expression(unary_operation: UnaryExpression, environment
         } as IntegerValue
     } else if (unary_operation.operator == "+" && right.type == "integer") {
         return right
+    } else if (unary_operation.operator == "-" && right.type == "float") {
+        return {
+            type: "float",
+            value: (right as FloatValue).value * -1
+        } as FloatValue
+    } else if (unary_operation.operator == "+" && right.type == "float") {
+        return right
     } else {
         error("runtime", `Operator ${unary_operation.operator} not supported on type of ${right.type}`)
     }

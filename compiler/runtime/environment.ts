@@ -12,6 +12,7 @@ import { BooleanValue, IntegerValue, RuntimeValue, ArrayValue, NullValue, MAKE_A
 import len from "./builtins/len"
 import upper from "./builtins/upper"
 import lower from "./builtins/lower"
+import random from "./builtins/random"
 
 const TYPE_USE_VAL_ASSIGNMENT: ValueType[] = [
     "null",
@@ -102,6 +103,13 @@ function setupScope(environment: Environment) {
         {
             type: "native-function",
             call: openWrite
+        } as NativeFunctionValue
+	);
+    environment.declareVariable(
+        "random",
+        {
+            type: "native-function",
+            call: random
         } as NativeFunctionValue
 	);
 }

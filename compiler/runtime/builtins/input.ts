@@ -1,11 +1,10 @@
-import { log } from "../../errors";
+import { error, log } from "../../errors";
 import { RuntimeValue, StringValue } from "../values";
 
 export default function input(args: RuntimeValue[]): StringValue {
     const input_prompt = args[0]
     if (input_prompt.type != "string") {
-        console.error()
-        process.exit(1)
+        error("runtime", "parameter 0 of input(...) function of unexpected type. expected: string.")
     }
 
     const display_input = (input_prompt as StringValue).value
