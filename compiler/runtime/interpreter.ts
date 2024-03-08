@@ -324,17 +324,11 @@ function evaluate_call_expression(call_expression: CallExpression, environment: 
             value: null
         } as NullValue
     } else if (caller.type === "native-method") {
-        const func = evaluate(call_expression.caller, environment) as NativeMethodValue
-        const object = evaluate(call_expression.caller.object, environment) as RuntimeValue
+        const func = caller as NativeMethodValue
+        const object = evaluate((call_expression.caller as MemberExpression).object, environment) as RuntimeValue
 
         const result = func.call(object, argument_list, environment);
         return result;
-    } else if (caller.type === "instance") {
-
-        const instance = caller as ClassInstanceValue
-        console.log("Instance!", instance)
-        // instance.inherits_from.attributes
-
     } else {
         error("runtime", `Can only call functions, procedures, or class instances, not values of type ${caller.type}`)
     }
@@ -686,7 +680,6 @@ function evaluate_member_expression(expression: MemberExpression, environment: E
     } else if (type == "instance") {
         let instance = object as ClassInstanceValue
         while (true) {
-            console.log(instance)
             const instance_of = instance.instance_of
             for (const { identifier, is_private } of instance_of.attributes) {
                 if (identifier == string_property) {
