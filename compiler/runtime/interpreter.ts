@@ -128,6 +128,7 @@ function evaluate_class_initialisation(class_call: Expression, environment: Envi
                     internal_environment: super_internal_environment,
                 } as ClassInstanceValue
 
+                instance.super_instance = super_instance
                 internal_environment.declareVariable("super", super_instance)
             }
 
@@ -683,33 +684,42 @@ function evaluate_member_expression(expression: MemberExpression, environment: E
 
         }
     } else if (type == "instance") {
-        const instance = object as ClassInstanceValue
-        const instance_of = instance.instance_of
-        for (const { identifier, is_private } of instance_of.attributes) {
-            if (identifier == string_property) {
-                if (is_private) {
-                    error("runtime", "Attempted to access an attribute that is set to private")
+        let instance = object as ClassInstanceValue
+        while (true) {
+            console.log(instance)
+            const instance_of = instance.instance_of
+            for (const { identifier, is_private } of instance_of.attributes) {
+                if (identifier == string_property) {
+                    if (is_private) {
+                        error("runtime", "Attempted to access an attribute that is set to private")
+                    }
+                    const value = instance.internal_environment.lookupVariable(identifier)
+                    return value
                 }
-                const value = instance.internal_environment.lookupVariable(identifier)
-                return value
+            }
+            for (const { identifier, is_private, value } of instance_of.methods) {
+                if (identifier == string_property) {
+                    if (is_private) {
+                        error("runtime", "Attempted to access a method that is set to private")
+                    }
+                    const procedure = { ...value } // we don't want to override the class itself
+                    procedure.parent_scope = instance.internal_environment // change scope defined in to be within the class instance
+    
+                    // NOTE: kinda hacky, shouldn't run when a member is accessed, only when the constructor is called
+                    // TODO: Fix this!
+                    if (identifier == "new") {
+                        class_constructor(instance.instance_of, instance.internal_environment)
+                    }
+                    return procedure
+                }
+            }
+            if (instance.super_instance) {
+                instance = instance.super_instance
+            } else {
+                break
             }
         }
-        for (const { identifier, is_private, value } of instance_of.methods) {
-            if (identifier == string_property) {
-                if (is_private) {
-                    error("runtime", "Attempted to access a method that is set to private")
-                }
-                const procedure = { ...value } // we don't want to override the class itself
-                procedure.parent_scope = instance.internal_environment // change scope defined in to be within the class instance
 
-                // NOTE: kinda hacky, shouldn't run when a member is accessed, only when the constructor is called
-                // TODO: Fix this!
-                if (identifier == "new") {
-                    class_constructor(instance.instance_of, instance.internal_environment)
-                }
-                return procedure
-            }
-        }
         error("runtime", `Cannot find attribute/method ${string_property} on class instance`)
     } else {
         error("runtime", `Can not find property ${string_property} on variable.`)
