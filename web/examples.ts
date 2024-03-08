@@ -66,12 +66,16 @@ endswitch
             {
                 title: "String Handling",
                 code:
-                    `someText = "Computer Science"
-print(someText.length)
-print(someText.substring(3, 3))
+                    `subject = "ComputerScience"
 
-print(upper(someText))
-print(lower(someText))`
+print(subject.length)
+
+print(subject.substring(3, 5))
+print(subject.left(4))
+print(subject.right(3))
+
+print(subject.upper)
+print(subject.lower)`
             },
             {
                 title: "Functions",

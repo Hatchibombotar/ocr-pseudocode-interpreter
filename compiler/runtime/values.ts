@@ -60,7 +60,43 @@ export const prototype: {
                     value: source.value.substring(args[0].value, args[0].value + args[1].value)
                 }) as StringValue
             }
-        }) as NativeMethodValue
+        }) as NativeMethodValue,
+        left: ({
+            type: "native-method",
+            call: (source: StringValue, args: [IntegerValue], environment) => {
+                if (args[0].type != "integer") {
+                    error("runtime", "Only integers can be used in the left method.")
+                }
+                return ({
+                    type: "string",
+                    value: source.value.substring(0, args[0].value)
+                }) as StringValue
+            }
+        }) as NativeMethodValue,
+        right: ({
+            type: "native-method",
+            call: (source: StringValue, args: [IntegerValue], environment) => {
+                if (args[0].type != "integer") {
+                    error("runtime", "Only integers can be used in the right method.")
+                }
+                return ({
+                    type: "string",
+                    value: source.value.substring(source.value.length - args[0].value, source.value.length)
+                }) as StringValue
+            }
+        }) as NativeMethodValue,
+        upper: ({
+            type: "native-getter",
+            call: (source: StringValue, args: []) => {
+                return { type: "string", value: (source as StringValue).value.toUpperCase() }
+            }
+        }) as NativeGetterValue,
+        lower: ({
+            type: "native-getter",
+            call: (source: StringValue, args: []) => {
+                return { type: "string", value: (source as StringValue).value.toLowerCase() }
+            }
+        }) as NativeGetterValue,
     },
     "file-reader": {
         readLine: ({
