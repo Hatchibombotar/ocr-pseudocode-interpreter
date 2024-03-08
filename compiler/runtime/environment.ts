@@ -13,6 +13,7 @@ import len from "./builtins/len"
 import upper from "./builtins/upper"
 import lower from "./builtins/lower"
 import random from "./builtins/random"
+import newFile from "./builtins/newFile"
 
 const TYPE_USE_VAL_ASSIGNMENT: ValueType[] = [
     "null",
@@ -103,6 +104,13 @@ function setupScope(environment: Environment) {
         {
             type: "native-function",
             call: openWrite
+        } as NativeFunctionValue
+	);
+    environment.declareVariable(
+        "newFile",
+        {
+            type: "native-function",
+            call: newFile
         } as NativeFunctionValue
 	);
     environment.declareVariable(

@@ -1,6 +1,7 @@
 ## 08/03/2024
 - Added the `left` and `right` methods, `upper` and `lower` getters to strings
 - Fixed accessing of methods + attributes of super classes.
+- Added `newFile()` function
 
 ## 07/03/2024
 - Added class inheritance
