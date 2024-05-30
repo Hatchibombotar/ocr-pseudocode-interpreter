@@ -4,7 +4,7 @@ import FileSaver from "file-saver"
 import { AiFillCaretRight } from 'solid-icons/ai'
 import { FiXCircle } from 'solid-icons/fi'
 
-import Parser from '../compiler/reader/parser';
+import parse from '../compiler/reader/parser';
 import Environment from '../compiler/runtime/environment';
 import { evaluate } from '../compiler/runtime/interpreter';
 import { consoleOutput, setConsoleOutput } from './console';
@@ -13,6 +13,10 @@ import { valuesToStrings } from '../compiler/utils';
 import monarch_language from '../monarch_language';
 import { editor_theme, showExamples, setShowExamples, showFiles, setShowFiles, showExamQuestions, setShowExamQuestions } from './data';
 import { FileViewer } from './FileViewer';
+import { NativeFunctionValue, RuntimeValue, StringValue } from '../compiler/runtime/values';
+
+import input from '../compiler/runtime/builtins/input';
+import { error, log } from '../compiler/errors';
 
 window.onbeforeunload = () => true
 
@@ -52,6 +56,10 @@ const App: Component = () => {
 
   let environment = new Environment()
 
+  let inputBoxRef!: HTMLInputElement
+  const [inputPrompt, setInputPrompt] = createSignal("Input: ")
+  const [showInputBox, setShowInputBox] = createSignal(false)
+
   const run = async () => {
     setConsoleOutput([
       {
@@ -60,11 +68,52 @@ const App: Component = () => {
       }
     ])
 
-    const input = editor.getValue()
+    const inputText = editor.getValue()
 
     environment = new Environment()
 
-    const program = Parser(input)
+    environment.declareVariable(
+      "input",
+      {
+        type: "native-function",
+        call: async (args: RuntimeValue[]) => {
+          const input_prompt = args[0]
+          if (input_prompt.type != "string") {
+            error("runtime", "parameter 0 of input(...) function of unexpected type. expected: string.")
+          }
+
+          const display_input = (input_prompt as StringValue).value
+
+          setShowInputBox(true)
+          setInputPrompt(display_input)
+
+          inputBoxRef.focus()
+
+          await new Promise<void>((resolve) => {
+            const onKeyPress = (e: KeyboardEvent) => {
+              if (e.key == "Enter") {
+                resolve()
+              }
+            }
+            inputBoxRef.addEventListener("keypress", onKeyPress)
+          })
+          const input = inputBoxRef.value
+
+          setShowInputBox(false)
+
+          // const input: string = prompt(display_input) as string
+
+          let console_output = display_input
+          console_output += console_output.at(-1) == " " ? "" : " "
+          console_output += input
+          log(console_output)
+
+          return { type: "string", value: input } as StringValue;
+        },
+      } as NativeFunctionValue
+    )
+
+    const program = parse(inputText)
 
     // console.log(JSON.stringify(program))
 
@@ -83,7 +132,7 @@ const App: Component = () => {
       },
     ])
 
-    const program = Parser(input)
+    const program = parse(input)
     const result = await evaluate(program, environment)
 
     setConsoleOutput([
@@ -147,6 +196,10 @@ const App: Component = () => {
                   {text}
                 </p>
               }</For>
+              <Show when={showInputBox()}>
+                <p>{inputPrompt()}</p>
+                <input class="bg-transparent outline-0 border-b border-white" type="text" ref={inputBoxRef}></input>
+              </Show>
             </div>
             <div class="absolute bottom-0 w-full">
               <input ref={replRef} type='text' class="w-full bg-neutral-900 border-t border-t-neutral-400 focus-within:outline-none font-mono px-2 py-1 h-8" onKeyPress={({ key }) => {

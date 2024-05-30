@@ -2,7 +2,7 @@ import { error } from "../errors";
 import { Statement, Program, Expression, BinaryExpression, NumericLiteral, Identifier, NullLiteral, VariableDeclaration, AssignmentExpression, ArrayDeclaration, CallExpression, MemberExpression, StringLiteral, FunctionDeclaration, IfStatement, ReturnStatement, ForLoop, WhileLoop, DoUntilLoop, UnaryExpression, CaseStatement, SwitchStatement, FloatLiteral, RangeExpression, ClassDeclaration, ClassItem, ProcedureDeclaration } from "./ast";
 import { tokenise, Token, TokenType } from "./lexer";
 
-export default function Parser(source_code: string): Program {
+export default function parse(source_code: string): Program {
     let tokens: Token[] = []
 
     function at() {

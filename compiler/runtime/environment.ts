@@ -37,13 +37,6 @@ function setupScope(environment: Environment) {
         } as NativeFunctionValue
 	);
     environment.declareVariable(
-        "input",
-        {
-            type: "native-function",
-            call: input,
-        } as NativeFunctionValue
-	);
-    environment.declareVariable(
         "printRaw",
         {
             type: "native-function",

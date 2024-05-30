@@ -1,3 +1,6 @@
+## 30/05/2024
+- Changed the input function to show the prompt text before asking the question, and changed to using an input element, rather than a prompt popup.
+
 ## 08/03/2024
 - Added the `left` and `right` methods, `upper` and `lower` getters to strings
 - Fixed accessing of methods + attributes of super classes.
