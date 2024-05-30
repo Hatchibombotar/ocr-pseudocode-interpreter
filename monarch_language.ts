@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor"
 
-export default ({
+export const monarch_formatting: monaco.languages.IMonarchLanguage = {
 	defaultToken: 'invalid',
 	tokenPostfix: '.pseudocode',
 
@@ -104,4 +104,10 @@ export default ({
 			{ include: 'common' }
 		],
 	},
-}) as monaco.languages.IMonarchLanguage
+}
+
+export const language_configuration: monaco.languages.LanguageConfiguration = {
+	comments: {
+		lineComment: "//",
+	},
+}

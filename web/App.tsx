@@ -10,12 +10,11 @@ import { evaluate } from '../compiler/runtime/interpreter';
 import { consoleOutput, setConsoleOutput } from './console';
 import examples from './examples';
 import { valuesToStrings } from '../compiler/utils';
-import monarch_language from '../monarch_language';
+import { monarch_formatting, language_configuration } from '../monarch_language';
 import { editor_theme, showExamples, setShowExamples, showFiles, setShowFiles, showExamQuestions, setShowExamQuestions } from './data';
 import { FileViewer } from './FileViewer';
 import { NativeFunctionValue, RuntimeValue, StringValue } from '../compiler/runtime/values';
 
-import input from '../compiler/runtime/builtins/input';
 import { error, log } from '../compiler/errors';
 
 window.onbeforeunload = () => true
@@ -27,7 +26,8 @@ monaco.languages.register({
   mimetypes: ['text/x-mycustom'], // MIME types
 });
 
-monaco.languages.setMonarchTokensProvider('pseudocode', monarch_language);
+monaco.languages.setMonarchTokensProvider('pseudocode', monarch_formatting);
+monaco.languages.setLanguageConfiguration('pseudocode', language_configuration)
 
 
 let editor!: monaco.editor.IStandaloneCodeEditor
