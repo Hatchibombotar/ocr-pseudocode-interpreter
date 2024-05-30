@@ -1,7 +1,7 @@
 import { error, log } from "../../errors";
 import { RuntimeValue, StringValue } from "../values";
 
-export default function input(args: RuntimeValue[]): StringValue {
+export default async function input(args: RuntimeValue[]): Promise<StringValue> {
     const input_prompt = args[0]
     if (input_prompt.type != "string") {
         error("runtime", "parameter 0 of input(...) function of unexpected type. expected: string.")

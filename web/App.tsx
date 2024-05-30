@@ -52,7 +52,7 @@ const App: Component = () => {
 
   let environment = new Environment()
 
-  const run = () => {
+  const run = async () => {
     setConsoleOutput([
       {
         text: "---",
@@ -70,9 +70,9 @@ const App: Component = () => {
 
     // console.log(program)
 
-    evaluate(program, environment)
+    await evaluate(program, environment)
   }
-  const run_repl = () => {
+  const run_repl = async () => {
     const input = replRef.value
 
     setConsoleOutput([
@@ -84,7 +84,7 @@ const App: Component = () => {
     ])
 
     const program = Parser(input)
-    const result = evaluate(program, environment)
+    const result = await evaluate(program, environment)
 
     setConsoleOutput([
       ...consoleOutput(),

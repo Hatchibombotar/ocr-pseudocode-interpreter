@@ -213,7 +213,7 @@ export interface FileWriterValue extends RuntimeValue {
     path: string,
 }
 
-export type FunctionCall = (args: RuntimeValue[], env: Environment) => RuntimeValue;
+export type FunctionCall = (args: RuntimeValue[], env: Environment) => RuntimeValue | Promise<RuntimeValue>;
 
 export interface NativeFunctionValue extends RuntimeValue {
     type: "native-function",
