@@ -8,15 +8,15 @@ type FolderNode = {
     }
 }
 
-export default function FolderView({ paths }: {paths: () => string[]}) {
+export default function FolderView({ paths, onFileClick }: {paths: () => string[], onFileClick: (path: string) => void}) {
     return (
         <div class=" select-none">
-            <FolderViewChild depth={0} name="." nodes={() => getData(paths() ?? [])} />
+            <FolderViewChild depth={0} name="." nodes={() => getData(paths() ?? [])} onFileClick={onFileClick} />
         </div>
     )
 }
 
-function FolderViewChild({ depth, name, nodes }: { depth: number, name: string, nodes: () => FolderNode}) {
+function FolderViewChild({ depth, name, nodes, onFileClick }: { depth: number, name: string, nodes: () => FolderNode, onFileClick: (path: string) => void}) {
     const [collapsed, setCollaped] = createSignal(false)
 
     return (
@@ -26,7 +26,7 @@ function FolderViewChild({ depth, name, nodes }: { depth: number, name: string, 
                     class="flex items-center cursor-pointer hover:bg-neutral-700 "
                     onclick={(e) => {
                         if (Object.keys(nodes().children).length == 0) {
-                            setViewedFile(name)
+                            onFileClick(name)
                         } else {
                             setCollaped(!collapsed())
                             e.stopPropagation()
@@ -43,6 +43,7 @@ function FolderViewChild({ depth, name, nodes }: { depth: number, name: string, 
                     <div classList={{ "pl-4 border-l": depth > 0 }}>
                         <Show when={!collapsed()}>
                             <FolderViewChild
+                                onFileClick={onFileClick}
                                 depth={depth + 1}
                                 nodes={() => node}
                                 name={node.name}

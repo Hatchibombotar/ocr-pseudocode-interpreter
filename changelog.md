@@ -1,5 +1,6 @@
 ## 31/05/2024
 - Fixed the order of operations, so that it matches other languages.
+- Make the file viewer able to edit and add new files
 
 ## 30/05/2024
 - Changed the input function to show the prompt text before asking the question, and changed to using an input element, rather than a prompt popup.

@@ -178,7 +178,6 @@ export const prototype: {
                     error("runtime", "Cannot close a closed file.")
                 }
                 writeFile(file.path, file.value.join("\n"))
-                console.log(file.path)
                 file.closed = true
                 return {
                     type: "null",
