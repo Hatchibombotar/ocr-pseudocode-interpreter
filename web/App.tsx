@@ -93,6 +93,7 @@ const App: Component = () => {
             const onKeyPress = (e: KeyboardEvent) => {
               if (e.key == "Enter") {
                 resolve()
+                inputBoxRef.removeEventListener("keypress", onKeyPress)
               }
             }
             inputBoxRef.addEventListener("keypress", onKeyPress)

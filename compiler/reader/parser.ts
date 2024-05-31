@@ -59,12 +59,11 @@ export default function parse(source_code: string): Program {
         eat() // for
         const variable = expect(TokenType.Identifier, "Expected variable in for loop.").value
         eat() // =
-        const initial_value = parse_multiplicative_expression() // skips assignment and range so the "to" does not make it get passes as a range
+        const initial_value = parse_boolean_or_expression() // skips assignment and range so the "to" does not make it get passes as a range
         // TODO: use ranges instead of parsing items individially?
         eat() // to
         const end_value = parse_expression()
         const body: Statement[] = []
-
 
         while (at().type != TokenType.EOF && at().type != TokenType.Next) {
             body.push(parse_statement())
@@ -75,7 +74,6 @@ export default function parse(source_code: string): Program {
         if (loop_variable != variable) {
             error("syntax", "The variable being increased in next _ must be the same as in the loop initialiser.")
         }
-
 
         return {
             kind: "ForLoop",
@@ -264,7 +262,7 @@ export default function parse(source_code: string): Program {
             eat() // eat inherits keyword
             inherits_from = expect(TokenType.Identifier, `Expected identifier name following inherits keyword.`).value
         }
-        
+
         const body: ClassItem[] = []
 
         while (at().type != TokenType.EOF && at().type != TokenType.EndClass) {
@@ -370,6 +368,7 @@ export default function parse(source_code: string): Program {
         return parse_assignment_expression()
     }
 
+    // 2
     function parse_assignment_expression(): Expression {
         let left = parse_range_expression()
 
@@ -387,12 +386,12 @@ export default function parse(source_code: string): Program {
     }
 
     function parse_range_expression(): Expression {
-        let left = parse_multiplicative_expression()
+        let left = parse_boolean_or_expression()
 
         while (at().type == TokenType.To) {
             eat()
 
-            const right = parse_multiplicative_expression()
+            const right = parse_boolean_or_expression()
             left = {
                 kind: "RangeExpression",
                 left,
@@ -403,60 +402,7 @@ export default function parse(source_code: string): Program {
         return left
     }
 
-    function parse_multiplicative_expression(): Expression {
-        let left = parse_additive_expression()
-
-        while (at().value == "/" || at().value == "*" || at().value == "MOD" || at().value == "DIV") {
-            const operator = eat().value
-            const right = parse_additive_expression()
-            left = {
-                kind: "BinaryExpression",
-                left,
-                right,
-                operator
-            } as BinaryExpression
-        }
-
-        return left
-    }
-
-
-    function parse_additive_expression(): Expression {
-        let left = parse_exponent_expression()
-
-        while (at().value == "+" || at().value == "-") {
-            const operator = eat().value
-            const right = parse_exponent_expression()
-            left = {
-                kind: "BinaryExpression",
-                left,
-                right,
-                operator
-            } as BinaryExpression
-        }
-
-        return left
-    }
-
-
-
-    function parse_exponent_expression(): Expression {
-        let left = parse_boolean_or_expression()
-
-        while (at().value == "^") {
-            const operator = eat().value
-            const right = parse_boolean_or_expression()
-            left = {
-                kind: "BinaryExpression",
-                left,
-                right,
-                operator
-            } as BinaryExpression
-        }
-
-        return left
-    }
-
+    // 3
     function parse_boolean_or_expression(): Expression {
         let left = parse_boolean_and_expression()
 
@@ -474,6 +420,7 @@ export default function parse(source_code: string): Program {
         return left
     }
 
+    // 4
     function parse_boolean_and_expression(): Expression {
         let left = parse_comparison_expression()
 
@@ -491,10 +438,66 @@ export default function parse(source_code: string): Program {
         return left
     }
 
+    // 8/9
     function parse_comparison_expression(): Expression {
-        let left = parse_not_expression()
+        let left = parse_additive_expression()
 
         while (["==", "!=", ">", "<", ">=", "<="].includes(at().value)) {
+            const operator = eat().value
+            const right = parse_additive_expression()
+            left = {
+                kind: "BinaryExpression",
+                left,
+                right,
+                operator
+            } as BinaryExpression
+        }
+
+        return left
+    }
+
+    // 11
+    function parse_additive_expression(): Expression {
+        let left = parse_multiplicative_expression()
+
+        while (at().value == "+" || at().value == "-") {
+            const operator = eat().value
+            const right = parse_multiplicative_expression()
+            left = {
+                kind: "BinaryExpression",
+                left,
+                right,
+                operator
+            } as BinaryExpression
+        }
+
+        return left
+    }
+
+    // 12
+    function parse_multiplicative_expression(): Expression {
+        let left = parse_exponent_expression()
+
+        while (at().value == "/" || at().value == "*" || at().value == "MOD" || at().value == "DIV") {
+            const operator = eat().value
+            const right = parse_exponent_expression()
+            left = {
+                kind: "BinaryExpression",
+                left,
+                right,
+                operator
+            } as BinaryExpression
+        }
+
+        return left
+    }
+
+
+    // 13
+    function parse_exponent_expression(): Expression {
+        let left = parse_not_expression()
+
+        while (at().value == "^") {
             const operator = eat().value
             const right = parse_not_expression()
             left = {
@@ -509,6 +512,7 @@ export default function parse(source_code: string): Program {
     }
 
 
+    // 14
     function parse_not_expression(): Expression {
         if (at().value == "NOT") {
             const operator = eat().value
@@ -522,6 +526,7 @@ export default function parse(source_code: string): Program {
         return parse_positive_expression()
     }
 
+    // 14
     function parse_positive_expression(): Expression {
         if (at().value == "+") {
             const operator = eat().value
@@ -535,6 +540,7 @@ export default function parse(source_code: string): Program {
         return parse_negative_expression()
     }
 
+    // 14
     function parse_negative_expression(): Expression {
         if (at().value == "-") {
             const operator = eat().value
@@ -548,7 +554,7 @@ export default function parse(source_code: string): Program {
         return parse_new_expression()
     }
 
-    
+    // 16
     function parse_new_expression(): Expression {
         if (at().type == TokenType.New) {
             const operator = eat().value
@@ -562,7 +568,7 @@ export default function parse(source_code: string): Program {
         return parse_member_call_expression()
     }
 
-
+    // 17
     function parse_member_call_expression(): Expression {
         const member = parse_member_expression()
 
@@ -573,6 +579,7 @@ export default function parse(source_code: string): Program {
         return member
     }
 
+    // 17
     function parse_call_expression(caller: Expression): Expression {
         let call_expression: Expression = {
             kind: "CallExpression",
@@ -605,6 +612,7 @@ export default function parse(source_code: string): Program {
         return argument_list
     }
 
+    // 17
     function parse_member_expression(): Expression {
         let object = parse_primary_expression()
 
