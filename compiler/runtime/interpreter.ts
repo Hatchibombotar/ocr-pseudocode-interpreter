@@ -272,10 +272,6 @@ async function call_procedure(procedure: ProcedureValue, args: RuntimeValue[]) {
 }
 
 async function evaluate_call_expression(call_expression: CallExpression, environment: Environment): Promise<RuntimeValue> {
-    if (call_expression.caller.kind != "Identifier" && call_expression.caller.kind != "MemberExpression") {
-        error("runtime", `Only identifiers are supported in call expressions, ${call_expression.caller.kind} is not supported.`)
-    }
-
     const argument_list = await Promise.all(call_expression.arguments.map(async (arg) => await evaluate(arg, environment)))
     const caller = await evaluate(call_expression.caller, environment);
 
