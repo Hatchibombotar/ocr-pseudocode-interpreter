@@ -1,18 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <!-- <link rel="shortcut icon" type="image/ico" href="/web/assets/favicon.ico" /> -->
-    <title>OCR Reference Language Interpreter</title>
-    <script type="module" crossorigin src="./assets/index-10aae7a8.js"></script>
-    <link rel="stylesheet" href="./assets/index-65fe0be4.css">
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
 
-    
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <!-- <link rel="shortcut icon" type="image/ico" href="/web/assets/favicon.ico" /> -->
+  <title>OCR Reference Language Interpreter</title>
+  <script>
+    fetch("https://hatchibombotar-analytics.deno.dev/event", {
+      method: "POST",
+      body: JSON.stringify({
+        event: "ocr-pseudocode-interpreter/view",
+        page: document.location.href,
+        referrer: document.referrer,
+      })
+    }).catch(err => console.error(err))
+  </script>
+  <script type="module" crossorigin src="./assets/index-10aae7a8.js"></script>
+  <link rel="stylesheet" href="./assets/index-65fe0be4.css">
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+
+  
+</body>
+
 </html>
